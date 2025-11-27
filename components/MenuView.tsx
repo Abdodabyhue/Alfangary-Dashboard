@@ -113,21 +113,28 @@ const MenuView: React.FC = () => {
   const handleAddItem = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
+        const payload = {
+            name: newItemData.name,
+            description: newItemData.description,
+            price: parseFloat(newItemData.price) || 0,
+            is_available: true
+        };
         const res = await fetch(WEBHOOK_CONFIG.ADD_MENU_URL, {
             method: 'POST',
             headers: WEBHOOK_CONFIG.HEADERS,
-            body: JSON.stringify(newItemData)
+            body: JSON.stringify(payload)
         });
         const body = await res.json().catch(() => ({}));
         if (res.ok && body && body.success) {
             setIsAddingNew(false);
             setNewItemData({ name: '', category: 'General', description: '', price: '' });
-            fetchMenu(); // Refresh list
+            await fetchMenu(); // Refresh list and wait for it
+            alert('Product added successfully!');
         } else {
             alert('Failed to add item: ' + (body.error || 'Unknown error'));
         }
       } catch (e) {
-          alert("Failed to add item");
+          alert("Failed to add item: " + (e instanceof Error ? e.message : "Unknown error"));
       }
   };
 

@@ -1,9 +1,15 @@
 
-// Determine API base URL based on environment
+// Determine API base URL based on environment (prefer runtime origin in production)
 const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = isDevelopment 
+/*
+    Use localhost during development. For production, prefer a runtime-derived origin
+    so the client always calls the same host that served the frontend (this avoids
+    accidentally pointing to localhost if a build was produced with DEV=true or
+    stale assets were deployed).
+*/
+const API_BASE_URL = isDevelopment
     ? 'http://localhost:3001/api'
-    : '/api';
+    : (typeof window !== 'undefined' && window.location ? `${window.location.origin}/api` : '/api');
 
 console.log('[Config] isDevelopment:', isDevelopment, 'API_BASE_URL:', API_BASE_URL);
 

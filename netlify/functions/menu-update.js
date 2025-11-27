@@ -11,7 +11,7 @@ const dbConfig = {
 const pool = new Pool(dbConfig);
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 };
@@ -102,9 +102,9 @@ exports.handler = async (event, context) => {
     } catch (error) {
       console.error('Database error:', error.message);
       return {
-        statusCode: 200,
+        statusCode: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ success: true })
+        body: JSON.stringify({ success: false, error: error.message })
       };
     }
   } catch (error) {

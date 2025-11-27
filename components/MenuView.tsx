@@ -58,14 +58,22 @@ const MenuView: React.FC = () => {
     ));
 
     try {
-        await fetch(WEBHOOK_CONFIG.TOGGLE_MENU_URL, {
+        // Check server response to ensure change persisted
+        const res = await fetch(WEBHOOK_CONFIG.TOGGLE_MENU_URL, {
             method: 'POST',
             headers: WEBHOOK_CONFIG.HEADERS,
             body: JSON.stringify({ item_id: id, is_available: newStatus })
         });
-    } catch (e) {
-        console.error("Failed to toggle availability", e);
-        // Revert on error
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || body.success === false) {
+            // revert optimistic update
+            setItems(prev => prev.map(item => 
+                item.item_id === id ? { ...item, is_available: !newStatus } : item
+            ));
+            console.error('Toggle failed:', body.error || 'Unknown');
+        }
+    } catch (err) {
+        // network or other error, revert optimistic update
         setItems(prev => prev.map(item => 
             item.item_id === id ? { ...item, is_available: !newStatus } : item
         ));
@@ -82,17 +90,20 @@ const MenuView: React.FC = () => {
             headers: WEBHOOK_CONFIG.HEADERS,
             body: JSON.stringify({
                 item_id: editingItem.item_id,
-                name: editingItem.item_name_ar,
+                item_name_ar: editingItem.item_name_ar,
                 description: editingItem.description_ar,
                 price: editingItem.price
             })
         });
 
-        if (res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body && body.success !== false) {
             setItems(prev => prev.map(item => 
                 item.item_id === editingItem.item_id ? editingItem : item
             ));
             setEditingItem(null);
+        } else {
+            alert('Failed to save changes: ' + (body.error || 'Unknown error'));
         }
     } catch (e) {
         alert("Failed to save changes");
@@ -107,10 +118,13 @@ const MenuView: React.FC = () => {
             headers: WEBHOOK_CONFIG.HEADERS,
             body: JSON.stringify(newItemData)
         });
-        if (res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body && body.success) {
             setIsAddingNew(false);
             setNewItemData({ name: '', category: 'General', description: '', price: '' });
             fetchMenu(); // Refresh list
+        } else {
+            alert('Failed to add item: ' + (body.error || 'Unknown error'));
         }
       } catch (e) {
           alert("Failed to add item");
